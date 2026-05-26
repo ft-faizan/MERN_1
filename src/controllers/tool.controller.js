@@ -1,10 +1,212 @@
+// const Tool = require("../models/webtool.model.js");
+// const Category = require("../models/category.model.js");
+// const imagekit = require("../services/imagekit.service.js");
+// const SavedTool = require("../models/usertool.model.js");
+// const User = require("../models/user.model.js");
+
+const mongoose = require("mongoose");
 const Tool = require("../models/webtool.model.js");
-const Category = require("../models/category.model.js");
-const imagekit = require("../services/imagekit.service.js");
-const SavedTool = require("../models/usertool.model.js");
+const Category = require("../models/category.model.js"); 
 const User = require("../models/user.model.js");
+const SavedTool = require("../models/usertool.model.js");
+const imagekit = require("../services/imagekit.service.js");
+
+
+// exports.getAdminStats = async (req, res) => {
+//   try {
+//     // 1. Aggregating Tools per Admin
+//     const toolStats = await Tool.aggregate([
+//       { 
+//         $group: { 
+//           _id: "$addedBy", // Groups tools by the admin who added them
+//           count: { $sum: 1 } 
+//         } 
+//       },
+//       { 
+//         $lookup: { 
+//           from: "users", // Joins with the 'users' collection
+//           localField: "_id", 
+//           foreignField: "_id", 
+//           as: "admin" 
+//         } 
+//       },
+//       { $unwind: "$admin" }, // Flattens the joined array
+//       { 
+//         $project: { 
+//           _id: 0, 
+//           email: "$admin.email", 
+//           count: 1 
+//         } 
+//       }
+//     ]);
+
+//     // 2. Aggregating Categories per Admin
+//     const categoryStats = await Category.aggregate([
+//       { 
+//         $group: { 
+//           _id: "$addedBy", 
+//           count: { $sum: 1 } 
+//         } 
+//       },
+//       { 
+//         $lookup: { 
+//           from: "users", 
+//           localField: "_id", 
+//           foreignField: "_id", 
+//           as: "admin" 
+//         } 
+//       },
+//       { $unwind: "$admin" },
+//       { 
+//         $project: { 
+//           _id: 0, 
+//           email: "$admin.email", 
+//           count: 1 
+//         } 
+//       }
+//     ]);
+
+//     res.json({ success: true, toolStats, categoryStats });
+//   } catch (error) {
+//     console.error("STATS ERROR:", error);
+//     res.status(500).json({ success: false, message: "Stats fetch failed" });
+//   }
+// };
+
 
 // create a tool
+
+
+// exports.getAdminStats = async (req, res) => {
+//   try {
+//     const { email } = req.query;
+//     let matchQuery = {};
+
+//     // If an email is provided, we find the User ID first
+//     if (email) {
+//       const user = await User.findOne({ email: email.toLowerCase() });
+//       if (user) {
+//         matchQuery = { _id: user._id };
+//       } else {
+//         // If email doesn't exist, return empty stats
+//         return res.json({ success: true, toolStats: [], categoryStats: [] });
+//       }
+//     }
+
+//     // 1. Tools Aggregation
+//     const toolStats = await Tool.aggregate([
+//       { $group: { _id: "$addedBy", count: { $sum: 1 } } },
+//       { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "admin" } },
+//       { $unwind: "$admin" },
+//       { $match: email ? { "admin.email": email.toLowerCase() } : {} },
+//       { $project: { _id: 0, email: "$admin.email", count: 1 } }
+//     ]);
+
+//     // 2. Categories Aggregation (FIXED: uses createdBy)
+//     const categoryStats = await Category.aggregate([
+//       { $group: { _id: "$createdBy", count: { $sum: 1 } } }, // 🔥 Fixed to createdBy
+//       { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "admin" } },
+//       { $unwind: "$admin" },
+//       { $match: email ? { "admin.email": email.toLowerCase() } : {} },
+//       { $project: { _id: 0, email: "$admin.email", count: 1 } }
+//     ]);
+
+//     res.json({ success: true, toolStats, categoryStats });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: "Stats failed" });
+//   }
+// };
+
+// exports.getAdminStats = async (req, res) => {
+//   try {
+//     const { email } = req.query;
+
+//     // 1. User Role Counts (For the Pie Chart)
+//     const userRoleStats = await User.aggregate([
+//       { $group: { _id: "$role", count: { $sum: 1 } } }
+//     ]);
+
+//     // 2. Tools Aggregation
+//     const toolStats = await Tool.aggregate([
+//       { $group: { _id: "$addedBy", count: { $sum: 1 } } },
+//       { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "admin" } },
+//       { $unwind: "$admin" },
+//       { $match: email ? { "admin.email": email.toLowerCase() } : {} },
+//       { $project: { _id: 0, email: "$admin.email", count: 1 } }
+//     ]);
+
+//     // 3. Categories Aggregation (Using createdBy)
+//     const categoryStats = await Category.aggregate([
+//       { $group: { _id: "$createdBy", count: { $sum: 1 } } },
+//       { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "admin" } },
+//       { $unwind: "$admin" },
+//       { $match: email ? { "admin.email": email.toLowerCase() } : {} },
+//       { $project: { _id: 0, email: "$admin.email", count: 1 } }
+//     ]);
+
+//     res.json({ 
+//       success: true, 
+//       toolStats, 
+//       categoryStats, 
+//       userRoleStats // New data for the pie chart
+//     });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: "Stats failed" });
+//   }
+// };
+
+
+exports.getAdminStats = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    // 1. User Role Counts (Global - Always correct)
+    const userRoleStats = await User.aggregate([
+      { $group: { _id: "$role", count: { $sum: 1 } } }
+    ]);
+
+    // 2. Tools Aggregation
+    // If email is provided, we only get that admin's count. 
+    // If not, we get all admins' counts.
+    const toolStats = await Tool.aggregate([
+      { $group: { _id: "$addedBy", count: { $sum: 1 } } },
+      { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "admin" } },
+      { $unwind: "$admin" },
+      { $match: email ? { "admin.email": email.toLowerCase() } : {} },
+      { $project: { _id: 0, email: "$admin.email", count: 1 } }
+    ]);
+
+    // 3. Categories Aggregation (Using createdBy)
+    const categoryStats = await Category.aggregate([
+      { $group: { _id: "$createdBy", count: { $sum: 1 } } },
+      { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "admin" } },
+      { $unwind: "$admin" },
+      { $match: email ? { "admin.email": email.toLowerCase() } : {} },
+      { $project: { _id: 0, email: "$admin.email", count: 1 } }
+    ]);
+
+    // 4. ADDED: Specific Folder Count for the searched email
+    // This helps fix the "Wrong Data" for the User Dashboard folders
+    let folderCount = 0;
+    if (email) {
+       const targetUser = await User.findOne({ email: email.toLowerCase() });
+       if (targetUser) {
+         // Assuming you have a Folder model
+         // folderCount = await Folder.countDocuments({ userId: targetUser._id });
+       }
+    }
+
+    res.json({ 
+      success: true, 
+      toolStats, 
+      categoryStats, 
+      userRoleStats,
+      folderCount 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Stats failed" });
+  }
+};
 exports.createTool = async (req, res) => {
   try {
     const { name, link, category, description } = req.body;
@@ -305,39 +507,105 @@ exports.updateTool = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// exports.getCategoryPreviewTools = async (req, res) => {
+//   try {
+//     const categoryId = req.params.id;
+
+//     // 🔥 Step 1: check if category exists
+//     const categoryExists = await Category.findById(categoryId);
+
+//     if (!categoryExists) {
+//       return res.status(404).json({
+//         message: "Category not found",
+//       });
+//     }
+
+//     // 🔥 Step 2: get top saved tools
+//     let tools = await Tool.find({ category: categoryId })
+//       .sort({ saveCount: -1 })
+//       .limit(20);
+
+//     // 🔥 Step 3: check if all saveCount = 0
+//     const allZero = tools.every((tool) => tool.saveCount === 0);
+
+//     // 🔥 Step 4: fallback → recent tools
+//     if (allZero) {
+//       tools = await Tool.find({ category: categoryId })
+//         .sort({ createdAt: -1 })
+//         .limit(20);
+//     }
+
+//     res.json({
+//       success: true,
+//       tools,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 exports.getCategoryPreviewTools = async (req, res) => {
+
   try {
+
     const categoryId = req.params.id;
 
-    // 🔥 Step 1: check if category exists
-    const categoryExists = await Category.findById(categoryId);
+    // ✅ CHECK CATEGORY EXISTS
+    const categoryExists =
+      await Category.findById(categoryId);
 
     if (!categoryExists) {
+
       return res.status(404).json({
         message: "Category not found",
       });
     }
 
-    // 🔥 Step 2: get top saved tools
-    let tools = await Tool.find({ category: categoryId })
+    // ✅ TOTAL TOOL COUNT
+    const total =
+      await Tool.countDocuments({
+        category: categoryId,
+      });
+
+    // ✅ TOP SAVED TOOLS
+    let tools = await Tool.find({
+      category: categoryId,
+    })
       .sort({ saveCount: -1 })
       .limit(20);
 
-    // 🔥 Step 3: check if all saveCount = 0
-    const allZero = tools.every((tool) => tool.saveCount === 0);
+    // ✅ CHECK ALL saveCount = 0
+    const allZero = tools.every(
+      (tool) => tool.saveCount === 0
+    );
 
-    // 🔥 Step 4: fallback → recent tools
+    // ✅ FALLBACK → RECENT TOOLS
     if (allZero) {
-      tools = await Tool.find({ category: categoryId })
+
+      tools = await Tool.find({
+        category: categoryId,
+      })
         .sort({ createdAt: -1 })
         .limit(20);
     }
 
+    // ✅ RESPONSE
     res.json({
+
       success: true,
+
+      total,
+
       tools,
     });
+
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+
+    console.log(error);
+
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };

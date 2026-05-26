@@ -40,7 +40,6 @@ router.post('/login', loginUser);
 
 router.get("/me", verifyToken, getCurrentUser);
 
-
 // POST http://localhost:5000/api/auth/logout
 
 //  after login, and  test

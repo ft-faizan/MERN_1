@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { verifyToken } = require("../middlewares/auth.middleware.js");
+const { verifyToken,isAdmin } = require("../middlewares/auth.middleware.js");
 const { authorizeRoles } = require("../middlewares/authorizeRoles.js");
 const upload = require("../middlewares/upload.middleware.js");
 
@@ -11,7 +11,8 @@ const {
   deleteTool,
   updateTool,
   getToolById,
-  getCategoryPreviewTools
+  getCategoryPreviewTools,
+  getAdminStats
 } = require("../controllers/tool.controller.js");
 
 router.post(
@@ -27,10 +28,16 @@ router.get("/", getTools);
 
 // 🔴 ADMIN PANEL
 router.get("/admin", verifyToken, getTools);
+console.log("verifyToken:", typeof verifyToken);
+console.log("isAdmin:", typeof isAdmin);
+console.log("getAdminStats:", typeof getAdminStats);
+ router.get("/admin-stats", verifyToken, isAdmin, getAdminStats);
 
 router.get("/category/:id/preview", getCategoryPreviewTools);
 
 router.get("/:id", getToolById);
+
+// router.get("/admin-stats", verifyToken, isAdmin, toolController.getAdminStats);
 
 router.delete("/:id", verifyToken, authorizeRoles("admin", "superadmin"), deleteTool);
 
@@ -45,3 +52,4 @@ router.put(
 );
 
 module.exports = router;
+

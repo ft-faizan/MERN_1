@@ -16,6 +16,8 @@ const folderRoutes = require("./routes/folder.routes.js");
 const savedToolRoutes = require("./routes/savedTool.routes.js");
 const adminRoutes = require("./routes/admin.routes");
 const userRoutes = require("./routes/user.routes.js");
+const dashboardRoutes = require("./routes/dashboard.routes.js");
+
 
 app.use(
   cors({
@@ -54,6 +56,9 @@ app.use("/api/saved-tools", savedToolRoutes);
 // admin routes
 app.use("/api/admin", adminRoutes);
 
-module.exports = app;
+// place it with your other app.use() route lines:
+app.use("/api/dashboard", dashboardRoutes);
 
+
+module.exports = app;
 

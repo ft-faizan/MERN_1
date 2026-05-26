@@ -40,7 +40,9 @@ exports.registerUser = async function registerUser(req, res) {
 
         // 5️⃣ Create JWT token
         const token = jwt.sign(
-            { id: newUser._id, role: newUser.role },
+            { id: newUser._id,
+                 role: newUser.role },
+           
             config.jwtSecret,
             { expiresIn: "30d" }
         );
@@ -114,6 +116,7 @@ exports.loginUser = async function loginUser(req, res) {
                 id: user._id,
                 role: user.role
             },
+            
             config.jwtSecret,
             { expiresIn: "30d" }
         );
@@ -153,7 +156,8 @@ exports.getCurrentUser = async function getCurrentUser(req, res) {
 
     try {
 
-        const user = await User.findById(req.user.id).select("-password");
+     const user = await User.findById(req.user.id).select("-password");
+        
 
         if (!user) {
             return res.status(404).json({
@@ -220,7 +224,7 @@ exports.updateUserName = async function updateUserName(req, res) {
 
         // 2️⃣ Update user
         const updatedUser = await User.findByIdAndUpdate(
-            req.user.id, // from token
+             req.user.id, // from token
             { name: name.trim() },
             { new: true, runValidators: true }
         ).select("-password");
