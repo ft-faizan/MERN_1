@@ -341,6 +341,74 @@ const config = require("../configs/config.js");
 // Dynamic check for environment configuration flags
 const isProduction = process.env.NODE_ENV === "production";
 
+// // signup
+// exports.registerUser = async function registerUser(req, res) {
+//     const { name, email, password, role } = req.body;
+
+//     // 1️⃣ Validate fields
+//     if (!name || !email || !password) {
+//         return res.status(400).json({ message: "All fields are required" });
+//     }
+
+//     try {
+//         // 2️⃣ Check if email already exists
+//         const existingUser = await User.findOne({ email });
+
+//         if (existingUser) {
+//             return res.status(400).json({ message: "Email already exists" });
+//         }
+
+//         // 3️⃣ Hash password
+//         const saltRounds = 10;
+//         const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+//         // 4️⃣ Create user
+//         const newUser = new User({
+//             name,
+//             email,
+//             password: hashedPassword,
+//             role: role || "user" // default role
+//         });
+
+//         await newUser.save();
+
+//         // 5️⃣ Create JWT token - normalized payload token identifier properties
+//         const token = jwt.sign(
+//     { 
+//         id: newUser._id,
+//         role: newUser.role 
+//     },
+//             config.jwtSecret,
+//             { expiresIn: "30d" }
+//         );
+
+//         // 6️⃣ Send cross-origin safe cookie attributes 
+//         res.cookie("token", token, {
+//             httpOnly: true,
+//             secure: isProduction, 
+//             sameSite: isProduction ? "none" : "lax",
+//             path: "/",
+//             maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+//         });
+
+//         res.status(201).json({
+//             message: "User registered successfully",
+//             user: {
+//                 id: newUser._id,
+//                 name: newUser.name,
+//                 email: newUser.email,
+//                 role: newUser.role
+//             }
+//         });
+
+//     } catch (error) {
+//         console.error("Error registering user:", error);
+//         res.status(500).json({
+//             message: "Error registering user"
+//         });
+//     }
+// };
+
 // signup
 exports.registerUser = async function registerUser(req, res) {
     const { name, email, password, role } = req.body;
@@ -350,45 +418,54 @@ exports.registerUser = async function registerUser(req, res) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
+    // 2️⃣ Email REGEX validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({
+            message: "Please enter a valid email address"
+        });
+    }
+
     try {
-        // 2️⃣ Check if email already exists
+        // 3️⃣ Check if email already exists
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(400).json({ message: "Email already exists" });
         }
 
-        // 3️⃣ Hash password
+        // 4️⃣ Hash password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // 4️⃣ Create user
+        // 5️⃣ Create user
         const newUser = new User({
             name,
             email,
             password: hashedPassword,
-            role: role || "user" // default role
+            role: role || "user"
         });
 
         await newUser.save();
 
-        // 5️⃣ Create JWT token - normalized payload token identifier properties
+        // 6️⃣ Create JWT token
         const token = jwt.sign(
-    { 
-        id: newUser._id,
-        role: newUser.role 
-    },
+            {
+                id: newUser._id,
+                role: newUser.role
+            },
             config.jwtSecret,
             { expiresIn: "30d" }
         );
 
-        // 6️⃣ Send cross-origin safe cookie attributes 
+        // 7️⃣ Cookie
         res.cookie("token", token, {
             httpOnly: true,
-            secure: isProduction, 
+            secure: isProduction,
             sameSite: isProduction ? "none" : "lax",
             path: "/",
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+            maxAge: 30 * 24 * 60 * 60 * 1000
         });
 
         res.status(201).json({
@@ -403,6 +480,7 @@ exports.registerUser = async function registerUser(req, res) {
 
     } catch (error) {
         console.error("Error registering user:", error);
+
         res.status(500).json({
             message: "Error registering user"
         });
