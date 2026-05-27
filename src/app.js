@@ -21,7 +21,7 @@ const dashboardRoutes = require("./routes/dashboard.routes.js");
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://frontend-xi-flame-18.vercel.app",
     credentials: true,
   })
 );
