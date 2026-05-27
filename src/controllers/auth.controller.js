@@ -374,10 +374,10 @@ exports.registerUser = async function registerUser(req, res) {
 
         // 5️⃣ Create JWT token - normalized payload token identifier properties
         const token = jwt.sign(
-            { 
-                _id: newUser._id,
-                role: newUser.role 
-            },
+    { 
+        id: newUser._id,
+        role: newUser.role 
+    },
             config.jwtSecret,
             { expiresIn: "30d" }
         );
@@ -445,9 +445,9 @@ exports.loginUser = async function loginUser(req, res) {
         // 4️⃣ Generate JWT token - normalized payload token identifier properties
         const token = jwt.sign(
             {
-                _id: user._id,
-                role: user.role
-            },
+        id: user._id,
+        role: user.role
+    },
             config.jwtSecret,
             { expiresIn: "30d" }
         );
@@ -484,8 +484,8 @@ exports.loginUser = async function loginUser(req, res) {
 exports.getCurrentUser = async function getCurrentUser(req, res) {
     try {
         // Updated pointer targets req.user._id properties instead of legacy root identifier strings
-        const user = await User.findById(req.user._id).select("-password");
-
+        // const user = await User.findById(req.user._id).select("-password");
+            const user = await User.findById(req.user.id).select("-password");
         if (!user) {
             return res.status(404).json({
                 message: "User not found"
@@ -546,7 +546,8 @@ exports.updateUserName = async function updateUserName(req, res) {
 
         // 2️⃣ Update user matching updated authentication token structures
         const updatedUser = await User.findByIdAndUpdate(
-            req.user._id,
+            // req.user._id,
+            req.user.id,
             { name: name.trim() },
             { new: true, runValidators: true }
         ).select("-password");
