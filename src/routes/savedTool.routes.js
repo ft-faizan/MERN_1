@@ -18,7 +18,7 @@ router.put("/:id/move", verifyToken, moveSavedTool);
 router.post(
   "/",
   verifyToken,
-  upload.single("image"), // 🔥 important
+  upload.single("image"), 
   saveTool
 );
 router.put(

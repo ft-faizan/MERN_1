@@ -37,7 +37,6 @@ router.get("/category/:id/preview", getCategoryPreviewTools);
 
 router.get("/:id", getToolById);
 
-// router.get("/admin-stats", verifyToken, isAdmin, toolController.getAdminStats);
 
 router.delete("/:id", verifyToken, authorizeRoles("admin", "superadmin"), deleteTool);
 
@@ -47,7 +46,7 @@ router.put(
   "/:id",
   verifyToken,
   authorizeRoles("admin", "superadmin"),
-  upload.single("image"), // 🔥 IMPORTANT
+  upload.single("image"),
   updateTool
 );
 

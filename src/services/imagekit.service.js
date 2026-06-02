@@ -1,4 +1,3 @@
-// src/services/imagekit.js
 
 const ImageKit = require("imagekit");
 

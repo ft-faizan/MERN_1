@@ -24,7 +24,7 @@ router.get(
 
 
 
-router.post("/", verifyToken, authorizeRoles("admin", "superadmin"), createCategory); //perfectly working
+router.post("/", verifyToken, authorizeRoles("admin", "superadmin"), createCategory); 
 
 router.put("/:id", verifyToken, authorizeRoles("admin", "superadmin"), updateCategory);
 
