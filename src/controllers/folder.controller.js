@@ -41,47 +41,117 @@ exports.createFolder = async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 };
-// getFolders
+// // getFolders
+// exports.getFolders = async (req, res) => {
+//     try {
+
+//         const page = Number(req.query.page) || 1;
+//         const limit = 10;
+
+//         const skip = (page - 1) * limit;
+
+//         // 🔥 SEARCH
+//         const keyword = req.query.search
+//             ? {
+//                 name: {
+//                     $regex: req.query.search.toLowerCase(),
+//                     $options: "i"
+//                 }
+//             }
+//             : {};
+
+//         const folders = await Folder.find({
+//             userId: req.user.id,
+//             ...keyword
+//         })
+//             .sort({ createdAt: -1 })
+//             .skip(skip)
+//             .limit(limit);
+
+//         const total = await Folder.countDocuments({
+//             userId: req.user.id,
+//             ...keyword
+//         });
+
+//         res.json({
+//             success: true,
+//             total,
+//             page,
+//             pages: Math.ceil(total / limit),
+//             folders
+//         });
+
+//     } catch (error) {
+//         res.status(500).json({ message: "Server error" });
+//     }
+// };
+
+// Updated getFolders inside folder.controller.js
 exports.getFolders = async (req, res) => {
     try {
-
         const page = Number(req.query.page) || 1;
         const limit = 10;
-
         const skip = (page - 1) * limit;
 
-        // 🔥 SEARCH
         const keyword = req.query.search
             ? {
                 name: {
                     $regex: req.query.search.toLowerCase(),
                     $options: "i"
                 }
-            }
+              }
             : {};
 
-        const folders = await Folder.find({
-            userId: req.user.id,
+        // Find match criteria base
+        const matchQuery = {
+            userId: req.user._id || req.user.id, // Handles both payload fallback keys
             ...keyword
-        })
+        };
+
+        // Fetch folders matching requirements
+        const foldersRaw = await Folder.find(matchQuery)
             .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .lean(); // Lean for faster payload handling execution
 
-        const total = await Folder.countDocuments({
-            userId: req.user.id,
-            ...keyword
-        });
+        // 🔥 DYNAMIC STEP: Populate tools inside each folder for the frontend preview marquee
+        const foldersWithPreview = await Promise.all(
+            foldersRaw.map(async (folder) => {
+                // Find tools explicitly assigned to this folder
+                const tools = await SavedTool.find({ folderId: folder._id })
+                    .populate("toolId", "name image link") // Populate platform tool fields if exist
+                    .limit(6) // Only grab the top 6 items to keep payload data light
+                    .lean();
+
+                // Format tools data structurally so the frontend handles it uniformly
+                const formattedTools = tools.map(item => ({
+                    _id: item._id,
+                    name: item.type === "platform" ? item.toolId?.name : item.toolname,
+                    link: item.type === "platform" ? item.toolId?.link : item.toollink,
+                    image: item.type === "platform" ? item.toolId?.image?.url : item.image?.url
+                }));
+
+                return {
+                    ...folder,
+                    tools: formattedTools,
+                    toolCount: await SavedTool.countDocuments({ folderId: folder._id })
+                };
+            })
+        );
+
+        const total = await Folder.countDocuments(matchQuery);
 
         res.json({
             success: true,
             total,
             page,
             pages: Math.ceil(total / limit),
-            folders
+            folders: foldersWithPreview
         });
 
     } catch (error) {
+        console.error("Aggregation lookup error:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
