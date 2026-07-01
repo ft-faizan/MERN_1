@@ -61,6 +61,7 @@ exports.getCategories = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const mode = req.query.mode;
+        const all = req.query.all === "true"; // new 
 
         const keyword = req.query.search
             ? { name: { $regex: req.query.search, $options: "i" } }
@@ -84,6 +85,18 @@ exports.getCategories = async (req, res) => {
                 filter.createdBy = user._id;
             }
         }
+
+        // 🔥 Return all categories (for dropdowns)
+if (all) {
+    const categories = await Category.find(filter)
+        .populate("createdBy", "name email")
+        .sort({ createdAt: -1 });
+
+    return res.json({
+        success: true,
+        categories,
+    });
+}
 
         const categories = await Category.find(filter)
             .populate("createdBy", "name email")
