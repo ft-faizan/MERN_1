@@ -21,8 +21,8 @@ const dashboardRoutes = require("./routes/dashboard.routes.js");
 
 app.use(
   cors({
-    // origin: "https://tools-saver.vercel.app", // Production
-    origin:"http://localhost:5173",  // Development 
+    origin: "https://tools-saver.vercel.app", // Production
+    // origin:"http://localhost:5173",  // Development 
     credentials: true,
   })
 );
