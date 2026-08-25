@@ -86,6 +86,34 @@ exports.createFolder = async (req, res) => {
 //     }
 // };
 
+// ✅ Get or Ensure Default Folder for authenticated user (Independent of pagination)
+exports.getDefaultFolder = async (req, res) => {
+    try {
+        const userId = req.user._id || req.user.id;
+
+        let defaultFolder = await Folder.findOne({
+            userId,
+            $or: [{ type: "default" }, { name: "default" }]
+        });
+
+        if (!defaultFolder) {
+            defaultFolder = await Folder.create({
+                name: "default",
+                userId,
+                type: "default"
+            });
+        }
+
+        res.json({
+            success: true,
+            defaultFolder
+        });
+    } catch (error) {
+        console.error("Get default folder error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 // Updated getFolders inside folder.controller.js
 exports.getFolders = async (req, res) => {
     try {

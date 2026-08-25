@@ -6,11 +6,13 @@ const { verifyToken } = require("../middlewares/auth.middleware.js");
 const {
   createFolder,
   getFolders,
+  getDefaultFolder,
   deleteFolder,
   renameFolder
 } = require("../controllers/folder.controller.js");
 
 router.post("/", verifyToken, createFolder);
+router.get("/default", verifyToken, getDefaultFolder);
 router.get("/", verifyToken, getFolders);
 router.put("/:id", verifyToken, renameFolder);
 router.delete("/:id", verifyToken, deleteFolder);
