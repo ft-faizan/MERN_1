@@ -135,23 +135,26 @@ exports.saveTool = async (req, res) => {
 
 exports.getSavedTools = async (req, res) => {
   try {
-    const page = Number(req.query.page) || 1;
-    const limit = 50;
-    const skip = (page - 1) * limit;
+    const { search, folderId, all } = req.query;
+    const page = req.query.page ? Number(req.query.page) : null;
+    const limit = req.query.limit ? Number(req.query.limit) : null;
 
-    const keyword = req.query.search
-      ? {
-          $or: [
-            { toolname: { $regex: req.query.search, $options: "i" } },
-            { toollink: { $regex: req.query.search, $options: "i" } },
-          ],
-        }
-      : {};
-
-    const tools = await SavedTool.find({
+    const filter = {
       userId: req.user.id,
-      ...keyword,
-    })
+    };
+
+    if (folderId) {
+      filter.folderId = folderId;
+    }
+
+    if (search) {
+      filter.$or = [
+        { toolname: { $regex: search, $options: "i" } },
+        { toollink: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    let query = SavedTool.find(filter)
       // 🔥 UPDATED: Deep populate to get Category name from within toolId
       .populate({
         path: "toolId",
@@ -161,20 +164,35 @@ exports.getSavedTools = async (req, res) => {
         },
       })
       .populate("folderId", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+      .sort({ createdAt: -1 });
 
-    const total = await SavedTool.countDocuments({
-      userId: req.user.id,
-      ...keyword,
-    });
+    const total = await SavedTool.countDocuments(filter);
+
+    // Only paginate if explicitly requested via page or limit
+    if ((page || limit) && all !== "true") {
+      const pageNum = page || 1;
+      const limitNum = limit || 50;
+      const skip = (pageNum - 1) * limitNum;
+
+      query = query.skip(skip).limit(limitNum);
+      const tools = await query;
+
+      return res.json({
+        success: true,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum),
+        tools,
+      });
+    }
+
+    const tools = await query;
 
     res.json({
       success: true,
       total,
-      page,
-      pages: Math.ceil(total / limit),
+      page: 1,
+      pages: 1,
       tools,
     });
   } catch (error) {
